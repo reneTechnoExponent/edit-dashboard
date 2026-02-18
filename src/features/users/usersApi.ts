@@ -24,6 +24,15 @@ interface UpdateUserStatusRequest {
   status: string;
 }
 
+interface UserStatsResponse {
+  status: boolean;
+  message: string;
+  data: {
+    totalUsers: number;
+    subscribedUsers: number;
+  };
+}
+
 export const usersApi = adminApi.injectEndpoints({
   endpoints: (builder) => ({
     getUsers: builder.query<PaginatedResponse<User>, GetUsersParams>({
@@ -39,6 +48,10 @@ export const usersApi = adminApi.injectEndpoints({
             ]
           : [{ type: 'Users', id: 'LIST' }],
     }),
+    getUserStats: builder.query<UserStatsResponse, void>({
+      query: () => '/users/stats',
+      providesTags: [{ type: 'Users', id: 'STATS' }],
+    }),
     getUserDetails: builder.query<UserDetailsResponse, string>({
       query: (id) => `/users/${id}`,
       providesTags: (_result, _error, id) => [{ type: 'Users', id }],
@@ -52,6 +65,7 @@ export const usersApi = adminApi.injectEndpoints({
       invalidatesTags: (_result, _error, { id }) => [
         { type: 'Users', id },
         { type: 'Users', id: 'LIST' },
+        { type: 'Users', id: 'STATS' },
       ],
     }),
   }),
@@ -59,6 +73,7 @@ export const usersApi = adminApi.injectEndpoints({
 
 export const {
   useGetUsersQuery,
+  useGetUserStatsQuery,
   useGetUserDetailsQuery,
   useUpdateUserStatusMutation,
 } = usersApi;

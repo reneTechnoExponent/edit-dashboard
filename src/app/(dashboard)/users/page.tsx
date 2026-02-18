@@ -19,14 +19,16 @@ import { toast } from "sonner";
 import { Search, X } from "lucide-react";
 import {
   useGetUsersQuery,
+  useGetUserStatsQuery,
   useGetUserDetailsQuery,
   useUpdateUserStatusMutation,
 } from "@/features/users/usersApi";
 import type { User } from "@/types";
+import { Users, UserCheck } from "lucide-react";
 
 export default function UsersPage() {
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
   const [sortBy, setSortBy] = useState("createdAt");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -34,6 +36,9 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+  // Fetch user statistics
+  const { data: statsData } = useGetUserStatsQuery();
 
   // Fetch users with filters
   const { data, isLoading, isFetching } = useGetUsersQuery({
@@ -124,6 +129,11 @@ export default function UsersPage() {
     setPage(1);
   };
 
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setPage(1);
+  };
+
   const handleUpdateStatus = async (newStatus: string) => {
     if (!selectedUserId) return;
 
@@ -138,6 +148,7 @@ export default function UsersPage() {
   };
 
   const user = userDetails?.data?.user;
+  const stats = statsData?.data;
 
   return (
     <div className="space-y-6">
@@ -146,6 +157,34 @@ export default function UsersPage() {
         <p className="text-muted-foreground">
           Manage user accounts and view user information
         </p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalUsers ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              All registered users
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Subscribed Users</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.subscribedUsers ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Users with active subscriptions
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -228,10 +267,12 @@ export default function UsersPage() {
         page={page}
         pageSize={pageSize}
         onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
         onSortChange={handleSortChange}
         onRowClick={handleRowClick}
         isLoading={isLoading || isFetching}
         emptyMessage="No users found"
+        showRowNumbers={true}
       />
 
       {/* Detail Panel */}
@@ -249,6 +290,47 @@ export default function UsersPage() {
           </div>
         ) : user ? (
           <div className="space-y-6">
+            {/* Profile/Account Stats */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Profile/Account Stats</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 border rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Plan Tier</p>
+                  <p className="font-medium capitalize">{user.planTier || "free"}</p>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Account Status</p>
+                  <Badge variant={user.status === "active" ? "default" : "secondary"}>
+                    {user.status}
+                  </Badge>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Email Sync</p>
+                  <p className="text-sm font-medium">{user.emailSyncStatus || "off"}</p>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Calendar Sync</p>
+                  <p className="text-sm font-medium">{user.calendarSyncStatus || "off"}</p>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Created Date</p>
+                  <p className="text-sm font-medium">
+                    {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="p-3 border rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Last Active</p>
+                  <p className="text-sm font-medium">
+                    {user.lastActiveAt 
+                      ? new Date(user.lastActiveAt).toLocaleDateString()
+                      : "Never"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
             {/* Profile Information */}
             <div>
               <h3 className="text-lg font-semibold mb-3">Profile Information</h3>
@@ -260,12 +342,6 @@ export default function UsersPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">User ID</p>
                   <p className="font-mono text-sm">{user._id}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Account Status</p>
-                  <Badge variant={user.status === "active" ? "default" : "secondary"}>
-                    {user.status}
-                  </Badge>
                 </div>
               </div>
             </div>
@@ -293,9 +369,9 @@ export default function UsersPage() {
 
             <Separator />
 
-            {/* Authentication Methods */}
+            {/* Connected Integrations */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Authentication Methods</h3>
+              <h3 className="text-lg font-semibold mb-3">Connected Integrations</h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Gmail Connected</span>

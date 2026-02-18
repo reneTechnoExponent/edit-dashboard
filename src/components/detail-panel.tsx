@@ -26,12 +26,14 @@ export function DetailPanel({
 }: DetailPanelProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader>
+      <SheetContent className="w-full sm:max-w-xl overflow-y-auto p-0 flex flex-col">
+        <SheetHeader className="flex-shrink-0">
           <SheetTitle>{title}</SheetTitle>
           {description && <SheetDescription>{description}</SheetDescription>}
         </SheetHeader>
-        <div className="mt-6">{children}</div>
+        <div className="flex-1 overflow-y-auto px-4 pb-6">
+          <div className="mt-6">{children}</div>
+        </div>
       </SheetContent>
     </Sheet>
   );

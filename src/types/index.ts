@@ -32,12 +32,16 @@ export interface User {
   _id: string;
   email: string;
   status: 'active' | 'inactive';
+  planTier?: 'trial' | 'basic' | 'pro' | 'free';
   isSubscribed: boolean;
   connectGmail: boolean;
   connectGoogleCalendar: boolean;
   isFaceIdEnable: boolean;
   customerId: string | null;
   isDeleted: boolean;
+  emailSyncStatus?: string;
+  calendarSyncStatus?: string;
+  lastActiveAt?: string | null;
   createdAt: string;
   updatedAt: string;
 }

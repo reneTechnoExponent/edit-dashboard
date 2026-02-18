@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 // DEMO MODE: Set to true to bypass authentication for demo purposes
 // Set to false to re-enable full authentication
-const DEMO_MODE = true;
+const DEMO_MODE = false;
 
 // Public paths that don't require authentication
 const PUBLIC_PATHS = ['/login'];

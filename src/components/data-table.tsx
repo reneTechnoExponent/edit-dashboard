@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface DataTableColumn<T> {
   id: string;
@@ -37,12 +44,14 @@ interface DataTableProps<T> {
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
   onSortChange: (sortBy: string, sortOrder: "asc" | "desc") => void;
   onRowClick?: (row: T) => void;
   selectable?: boolean;
   onSelectionChange?: (selectedIds: string[]) => void;
   isLoading?: boolean;
   emptyMessage?: string;
+  showRowNumbers?: boolean;
 }
 
 export function DataTable<T extends { _id: string }>({
@@ -52,12 +61,14 @@ export function DataTable<T extends { _id: string }>({
   page,
   pageSize,
   onPageChange,
+  onPageSizeChange,
   onSortChange,
   onRowClick,
   selectable = false,
   onSelectionChange,
   isLoading = false,
   emptyMessage = "No data available",
+  showRowNumbers = false,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
@@ -88,6 +99,20 @@ export function DataTable<T extends { _id: string }>({
             className="h-4 w-4"
           />
         ),
+        enableSorting: false,
+      });
+    }
+
+    // Add row number column if enabled
+    if (showRowNumbers) {
+      cols.push({
+        id: "rowNumber",
+        header: "#",
+        cell: ({ row }) => {
+          const rowIndex = row.index + 1;
+          const globalIndex = (page - 1) * pageSize + rowIndex;
+          return <div className="text-muted-foreground">{globalIndex}</div>;
+        },
         enableSorting: false,
       });
     }
@@ -132,7 +157,7 @@ export function DataTable<T extends { _id: string }>({
     });
 
     return cols;
-  }, [columns, selectable, onSortChange]);
+  }, [columns, selectable, showRowNumbers, page, pageSize, onSortChange]);
 
   const table = useReactTable({
     data,
@@ -260,11 +285,36 @@ export function DataTable<T extends { _id: string }>({
 
       {/* Pagination */}
       <div className="flex items-center justify-between px-2">
-        <div className="text-sm text-muted-foreground">
-          {selectable && (
-            <span>
-              {table.getFilteredSelectedRowModel().rows.length} of {total} row(s) selected
-            </span>
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-muted-foreground">
+            {selectable && (
+              <span>
+                {table.getFilteredSelectedRowModel().rows.length} of {total} row(s) selected
+              </span>
+            )}
+          </div>
+          {onPageSizeChange && (
+            <div className="flex items-center space-x-2">
+              <p className="text-sm font-medium">Rows per page</p>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => {
+                  onPageSizeChange(Number(value));
+                  onPageChange(1); // Reset to first page when changing page size
+                }}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder={String(pageSize)} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[10, 20, 30, 50, 100].map((size) => (
+                    <SelectItem key={size} value={String(size)}>
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
