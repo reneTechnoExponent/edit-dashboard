@@ -10,8 +10,15 @@ import {
   Activity,
   BarChart3,
   FileText,
-  FileEdit,
   LogOut,
+  Menu,
+  Layers,
+  Tag,
+  ListChecks,
+  GitBranch,
+  Award,
+  Hash,
+  Mail,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { logout } from '@/features/auth/authSlice';
@@ -25,6 +32,11 @@ interface NavItem {
   href: string;
   icon: React.ComponentType<{ className?: string }>;
   requiredRole?: 'super_admin';
+}
+
+interface NavSection {
+  title: string;
+  items: NavItem[];
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -45,7 +57,28 @@ const NAV_ITEMS: NavItem[] = [
     icon: FileText,
     requiredRole: 'super_admin',
   },
-  { label: 'CMS', href: '/cms', icon: FileEdit },
+];
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    title: 'Taxonomy',
+    items: [
+      { label: 'Clothing Menus', href: '/taxonomy/clothing-menus', icon: Menu },
+      { label: 'Subcategories', href: '/taxonomy/subcategories', icon: Layers },
+      { label: 'Attributes', href: '/taxonomy/attributes', icon: Tag },
+      { label: 'Attribute Values', href: '/taxonomy/attribute-values', icon: ListChecks },
+      { label: 'Subcategory Attributes', href: '/taxonomy/subcategory-attributes', icon: GitBranch },
+      { label: 'Brands', href: '/taxonomy/brands', icon: Award },
+      { label: 'Tags', href: '/taxonomy/tags', icon: Hash },
+    ],
+  },
+  {
+    title: 'Content',
+    items: [
+      { label: 'CMS', href: '/content/cms', icon: FileText },
+      { label: 'Email Templates', href: '/content/email-templates', icon: Mail },
+    ],
+  },
 ];
 
 export function Sidebar() {
@@ -92,7 +125,7 @@ export function Sidebar() {
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 px-3 py-4 overflow-y-auto">
         {filteredNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname.startsWith(item.href);
@@ -113,6 +146,37 @@ export function Sidebar() {
             </Link>
           );
         })}
+
+        {/* Navigation Sections */}
+        {NAV_SECTIONS.map((section) => (
+          <div key={section.title} className="pt-4">
+            <h3 className="px-3 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              {section.title}
+            </h3>
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname.startsWith(item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                      isActive
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-700 hover:bg-gray-200'
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       <Separator />
