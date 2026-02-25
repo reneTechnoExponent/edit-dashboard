@@ -75,7 +75,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Content',
     items: [
-      { label: 'CMS', href: '/content/cms', icon: FileText },
+      { label: 'CMS', href: '/cms', icon: FileText },
       { label: 'Email Templates', href: '/content/email-templates', icon: Mail },
     ],
   },
