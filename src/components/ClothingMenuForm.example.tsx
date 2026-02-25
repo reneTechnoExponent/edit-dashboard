@@ -30,12 +30,18 @@ export function ClothingMenuDialogExample() {
     // Get form data
     const data = formRef.current.getData();
     
+    // Convert null to undefined for API compatibility
+    const apiData = {
+      ...data,
+      user: data.user ?? undefined,
+    };
+    
     setLoading(true);
     try {
       if (mode === "create") {
-        await createClothingMenu(data);
+        await createClothingMenu(apiData);
       } else {
-        await updateClothingMenu(editData._id, data);
+        await updateClothingMenu(editData._id, apiData);
       }
       
       setOpen(false);
