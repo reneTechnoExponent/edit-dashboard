@@ -39,8 +39,23 @@ interface BulkDeleteClothingItemsRequest {
   ids: string[];
 }
 
+interface ClothingStatsResponse {
+  status: boolean;
+  message: string;
+  data: {
+    totalItems: number;
+    itemsWithImages: number;
+    aiParsedItems: number;
+    averageItemsPerUser: number;
+  };
+}
+
 export const clothingApi = adminApi.injectEndpoints({
   endpoints: (builder) => ({
+    getClothingStats: builder.query<ClothingStatsResponse, void>({
+      query: () => '/clothing-items/stats',
+      providesTags: ['ClothingItems'],
+    }),
     getClothingItems: builder.query<PaginatedResponse<ClothingItem>, GetClothingItemsParams>({
       query: (params) => ({
         url: '/clothing-items',
@@ -104,6 +119,7 @@ export const clothingApi = adminApi.injectEndpoints({
 });
 
 export const {
+  useGetClothingStatsQuery,
   useGetClothingItemsQuery,
   useGetClothingItemDetailsQuery,
   useUpdateClothingItemMutation,

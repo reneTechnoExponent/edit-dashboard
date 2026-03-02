@@ -17,8 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Trash2, RefreshCw, Loader2 } from "lucide-react";
+import { Trash2, RefreshCw, Loader2, ShoppingBag, Image, Sparkles, TrendingUp } from "lucide-react";
 import {
+  useGetClothingStatsQuery,
   useGetClothingItemsQuery,
   useGetClothingItemDetailsQuery,
   useDeleteClothingItemMutation,
@@ -42,6 +43,9 @@ export default function ClothingPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+
+  // Fetch clothing statistics
+  const { data: statsData } = useGetClothingStatsQuery();
 
   // Fetch clothing items with filters
   const { data, isLoading, isFetching } = useGetClothingItemsQuery({
@@ -195,6 +199,7 @@ export default function ClothingPage() {
 
   const item = itemDetails?.data?.clothingItem;
   const itemUser = item?.user as User | undefined;
+  const stats = statsData?.data;
 
   return (
     <div className="space-y-6">
@@ -203,6 +208,58 @@ export default function ClothingPage() {
         <p className="text-muted-foreground">
           Manage clothing items across all users
         </p>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Items</CardTitle>
+            <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalItems ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              All clothing items
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Items with Images</CardTitle>
+            <Image className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.itemsWithImages ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Items that have images
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">AI Parsed Items</CardTitle>
+            <Sparkles className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.aiParsedItems ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Parsed by AI from emails
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg per User</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.averageItemsPerUser ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Average items per user
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}

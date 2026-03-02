@@ -36,8 +36,23 @@ interface CancelSubscriptionRequest {
   immediate: boolean;
 }
 
+interface SubscriptionStatsResponse {
+  status: boolean;
+  message: string;
+  data: {
+    totalSubscriptions: number;
+    activeSubscriptions: number;
+    cancelledSubscriptions: number;
+    conversionRate: number;
+  };
+}
+
 export const subscriptionsApi = adminApi.injectEndpoints({
   endpoints: (builder) => ({
+    getSubscriptionStats: builder.query<SubscriptionStatsResponse, void>({
+      query: () => '/subscriptions/stats',
+      providesTags: ['Subscriptions'],
+    }),
     getSubscriptions: builder.query<PaginatedResponse<Subscription>, GetSubscriptionsParams>({
       query: (params) => ({
         url: '/subscriptions',
@@ -89,6 +104,7 @@ export const subscriptionsApi = adminApi.injectEndpoints({
 });
 
 export const {
+  useGetSubscriptionStatsQuery,
   useGetSubscriptionsQuery,
   useGetSubscriptionDetailsQuery,
   useUpdateSubscriptionStatusMutation,

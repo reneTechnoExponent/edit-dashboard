@@ -20,8 +20,9 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Gift, Ban } from "lucide-react";
+import { Loader2, Gift, Ban, CreditCard, XCircle, TrendingUp, Users } from "lucide-react";
 import {
+  useGetSubscriptionStatsQuery,
   useGetSubscriptionsQuery,
   useGetSubscriptionDetailsQuery,
   useUpdateSubscriptionStatusMutation,
@@ -49,6 +50,9 @@ export default function SubscriptionsPage() {
   const [grantUserId, setGrantUserId] = useState("");
   const [grantDuration, setGrantDuration] = useState("30");
   const [grantPlanType, setGrantPlanType] = useState("premium");
+
+  // Fetch subscription statistics
+  const { data: statsData } = useGetSubscriptionStatsQuery();
 
   // Fetch subscriptions with filters
   const { data, isLoading, isFetching } = useGetSubscriptionsQuery({
@@ -205,6 +209,7 @@ export default function SubscriptionsPage() {
 
   const subscription = subscriptionDetails?.data?.subscription;
   const subscriptionUser = subscription?.user as User | undefined;
+  const stats = statsData?.data;
 
   return (
     <div className="space-y-6">
@@ -221,6 +226,58 @@ export default function SubscriptionsPage() {
             Grant Complimentary
           </Button>
         )}
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Subscriptions</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalSubscriptions ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              All subscription records
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Subscriptions</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.activeSubscriptions ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Currently active
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cancelled</CardTitle>
+            <XCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.cancelledSubscriptions ?? 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Cancelled subscriptions
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.conversionRate ?? 0}%</div>
+            <p className="text-xs text-muted-foreground">
+              Users with subscriptions
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
