@@ -49,7 +49,7 @@ export interface User {
 export interface ClothingItem {
   _id: string;
   user: string | User;
-  clothingMenu: string[];
+  clothingMenu: Array<string | { _id: string; title: string }>;
   title: string;
   image: string | null;
   size: string | null;
@@ -59,8 +59,15 @@ export interface ClothingItem {
   isBackgroundRemovedByAi: boolean;
   brand: string | null;
   price: number | null;
-  subcategory: string | null;
-  attributes: Array<{ attribute: string; value: string }>;
+  subcategory: string | { _id: string; title: string } | null;
+  attributes: Array<{ 
+    attribute: string | { _id: string; name: string }; 
+    value: string | { _id: string; value: string };
+  }>;
+  sourceDocId?: string | null;
+  itemLink?: string | null;
+  lastAiParsedAttemptedOn?: string | null;
+  lastBackgroundRemovalAttemptedOn?: string | null;
   createdAt: string;
   updatedAt: string;
 }

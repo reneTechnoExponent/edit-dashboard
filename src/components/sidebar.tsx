@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Users,
   Shirt,
-  FolderOpen,
   CreditCard,
   Activity,
   BarChart3,
@@ -42,7 +41,6 @@ interface NavSection {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Users', href: '/users', icon: Users },
   { label: 'Clothing Items', href: '/clothing', icon: Shirt },
-  { label: 'Collections', href: '/collections', icon: FolderOpen },
   { label: 'Subscriptions', href: '/subscriptions', icon: CreditCard },
   {
     label: 'System Monitor',

@@ -367,7 +367,13 @@ export default function ClothingPage() {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Subcategory</p>
-                  <p className="font-medium">{item.subcategory || "—"}</p>
+                  <p className="font-medium">
+                    {item.subcategory 
+                      ? typeof item.subcategory === 'object' 
+                        ? item.subcategory.title 
+                        : item.subcategory
+                      : "—"}
+                  </p>
                 </div>
                 {item.purchasedon && (
                   <div>
@@ -412,9 +418,11 @@ export default function ClothingPage() {
                     {item.attributes.map((attr, index) => (
                       <div key={index} className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
-                          {attr.attribute}
+                          {typeof attr.attribute === 'object' ? attr.attribute.name : attr.attribute}
                         </span>
-                        <span className="text-sm font-medium">{attr.value}</span>
+                        <span className="text-sm font-medium">
+                          {typeof attr.value === 'object' ? attr.value.value : attr.value}
+                        </span>
                       </div>
                     ))}
                   </div>
