@@ -1,5 +1,9 @@
 import { adminApi } from '@/lib/api';
-import type { AnalyticsMetrics, ApiResponse } from '@/types';
+import type {
+  AnalyticsEventSummary,
+  AnalyticsMetrics,
+  ItemFrequency,
+} from '@/types';
 
 interface GetMetricsParams {
   startDate?: string;
@@ -15,6 +19,20 @@ interface AnalyticsMetricsResponse {
 interface ExportAnalyticsParams {
   startDate?: string;
   endDate?: string;
+}
+
+// Event-tracking endpoints (spec: analytics-tracking)
+// Backend returns { success, message, data } per standard response shape
+interface EventSummaryResponse {
+  success: boolean;
+  message: string;
+  data: AnalyticsEventSummary;
+}
+
+interface ItemFrequencyResponse {
+  success: boolean;
+  message: string;
+  data: ItemFrequency;
 }
 
 export const analyticsApi = adminApi.injectEndpoints({
@@ -48,6 +66,22 @@ export const analyticsApi = adminApi.injectEndpoints({
         responseHandler: (response) => response.blob(),
       }),
     }),
+
+    // --- Event tracking (from analytics-tracking spec) ---
+    getEventSummary: builder.query<EventSummaryResponse, GetMetricsParams>({
+      query: (params) => ({
+        url: '/analytics/summary',
+        params,
+      }),
+      providesTags: ['Analytics'],
+    }),
+    getItemFrequency: builder.query<ItemFrequencyResponse, GetMetricsParams>({
+      query: (params) => ({
+        url: '/analytics/item-frequency',
+        params,
+      }),
+      providesTags: ['Analytics'],
+    }),
   }),
 });
 
@@ -56,4 +90,6 @@ export const {
   useGetClothingItemMetricsQuery,
   useGetSubscriptionMetricsQuery,
   useExportAnalyticsMutation,
+  useGetEventSummaryQuery,
+  useGetItemFrequencyQuery,
 } = analyticsApi;

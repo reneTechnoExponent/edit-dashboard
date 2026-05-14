@@ -136,6 +136,34 @@ export interface AnalyticsMetrics {
   };
 }
 
+// Event tracking analytics (from analytics-tracking spec)
+export type AnalyticsEventType =
+  | 'outfit_generated'
+  | 'outfit_saved'
+  | 'item_swapped'
+  | 'regenerate_triggered'
+  | 'manual_outfit_created';
+
+export type EventsByType = Record<AnalyticsEventType, number>;
+
+export interface AnalyticsEventSummary {
+  total_events: number;
+  events_by_type: EventsByType;
+  unique_users: number;
+  save_rate: number;
+}
+
+export interface ItemFrequencyEntry {
+  item_id: string;
+  count: number;
+}
+
+export interface ItemFrequency {
+  items: ItemFrequencyEntry[];
+  window_days: number;
+  total_saves: number;
+}
+
 // Table configuration
 export interface TableColumn<T> {
   id: string;
