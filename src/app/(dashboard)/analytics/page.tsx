@@ -35,11 +35,11 @@ import {
   useGetSubscriptionMetricsQuery,
   useExportAnalyticsMutation,
   useGetEventSummaryQuery,
-  useGetItemFrequencyQuery,
   useGetEventUsersQuery,
 } from "@/features/analytics/analyticsApi";
 import type { AnalyticsEventType, AnalyticsUserStatsRow } from "@/types";
 import { UserAnalyticsDialog } from "@/components/UserAnalyticsDialog";
+import { TopItemsSection } from "@/components/TopItemsSection";
 import {
   BarChart,
   Bar,
@@ -87,7 +87,6 @@ export default function AnalyticsPage() {
   const { data: clothingMetrics, isLoading: isLoadingClothing } = useGetClothingItemMetricsQuery(dateParams);
   const { data: subscriptionMetrics, isLoading: isLoadingSubscriptions } = useGetSubscriptionMetricsQuery(dateParams);
   const { data: eventSummary, isLoading: isLoadingEventSummary } = useGetEventSummaryQuery(dateParams);
-  const { data: itemFrequency, isLoading: isLoadingItemFrequency } = useGetItemFrequencyQuery(dateParams);
   const { data: eventUsers, isLoading: isLoadingEventUsers, isFetching: isFetchingEventUsers } =
     useGetEventUsersQuery({
       page: usersPage,
@@ -123,7 +122,6 @@ export default function AnalyticsPage() {
   const clothing = clothingMetrics?.data?.clothingItems;
   const subscriptions = subscriptionMetrics?.data?.subscriptions;
   const events = eventSummary?.data;
-  const topItems = itemFrequency?.data;
 
   // Prepare chart data for category distribution
   const categoryChartData = clothing?.categoryDistribution?.map((item) => ({
@@ -507,66 +505,6 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      {/* Top Items by Frequency */}
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">Top Items (Saved Outfits)</h2>
-        {isLoadingItemFrequency ? (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="space-y-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className="h-8 bg-muted animate-pulse rounded" />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ) : topItems ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                Most-Saved Items — Last {topItems.window_days} Days
-              </CardTitle>
-              <CardDescription>
-                {topItems.total_saves.toLocaleString()} total outfit_saved events in window
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {topItems.items.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  No saved-outfit events in this window
-                </p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">Rank</TableHead>
-                      <TableHead>Item ID</TableHead>
-                      <TableHead className="text-right">Save Count</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {topItems.items.map((item, index) => (
-                      <TableRow key={item.item_id}>
-                        <TableCell className="font-medium">#{index + 1}</TableCell>
-                        <TableCell className="font-mono text-xs">{item.item_id}</TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {item.count.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <p className="text-center text-muted-foreground">Item frequency unavailable</p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
       {/* Per-User Analytics */}
       <div>
         <h2 className="text-2xl font-semibold mb-1">Per-User Analytics</h2>
@@ -755,6 +693,9 @@ export default function AnalyticsPage() {
         startDate={startDate || undefined}
         endDate={endDate || undefined}
       />
+
+      {/* Top Items (Saved Outfits) — moved below Per-User Analytics */}
+      <TopItemsSection dateParams={dateParams} />
     </div>
   );
 }

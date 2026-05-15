@@ -156,12 +156,28 @@ export interface AnalyticsEventSummary {
 export interface ItemFrequencyEntry {
   item_id: string;
   count: number;
+  uniqueUserCount: number;
+  fromClosetCount: number;
+  lastSavedAt: string;
+  firstSavedAt: string;
+  title: string | null;
+  image: string | null;
+  brand: string | null;
+  color: string | null;
+  size: string | null;
+  category: string | null;
 }
 
 export interface ItemFrequency {
   items: ItemFrequencyEntry[];
   window_days: number;
   total_saves: number;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
 }
 
 // Per-user analytics drill-down (manager request: per-user event history,

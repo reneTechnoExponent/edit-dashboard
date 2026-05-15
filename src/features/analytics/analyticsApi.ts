@@ -40,6 +40,11 @@ interface ItemFrequencyResponse {
   data: ItemFrequency;
 }
 
+interface GetItemFrequencyParams extends GetMetricsParams {
+  page?: number;
+  limit?: number;
+}
+
 interface GetEventUsersParams extends GetMetricsParams {
   page?: number;
   limit?: number;
@@ -110,7 +115,7 @@ export const analyticsApi = adminApi.injectEndpoints({
       }),
       providesTags: ['Analytics'],
     }),
-    getItemFrequency: builder.query<ItemFrequencyResponse, GetMetricsParams>({
+    getItemFrequency: builder.query<ItemFrequencyResponse, GetItemFrequencyParams>({
       query: (params) => ({
         url: '/analytics/item-frequency',
         params,
