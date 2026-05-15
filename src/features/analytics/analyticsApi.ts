@@ -1,8 +1,13 @@
 import { adminApi } from '@/lib/api';
 import type {
+  AnalyticsEventEntry,
   AnalyticsEventSummary,
+  AnalyticsEventType,
   AnalyticsMetrics,
+  AnalyticsUserStatsRow,
+  AnalyticsUserSummary,
   ItemFrequency,
+  PaginatedResponse,
 } from '@/types';
 
 interface GetMetricsParams {
@@ -34,6 +39,36 @@ interface ItemFrequencyResponse {
   message: string;
   data: ItemFrequency;
 }
+
+interface GetEventUsersParams extends GetMetricsParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'totalEvents' | 'lastEventAt' | 'firstEventAt';
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+}
+
+interface GetUserEventsParams extends GetMetricsParams {
+  userId: string;
+  page?: number;
+  limit?: number;
+  eventType?: AnalyticsEventType;
+  sortOrder?: 'asc' | 'desc';
+}
+
+interface UserAnalyticsSummaryResponse {
+  success: boolean;
+  message: string;
+  data: AnalyticsUserSummary;
+}
+
+type EventUsersResponse = PaginatedResponse<AnalyticsUserStatsRow> & {
+  success?: boolean;
+};
+
+type UserEventsResponse = PaginatedResponse<AnalyticsEventEntry> & {
+  success?: boolean;
+};
 
 export const analyticsApi = adminApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -82,6 +117,33 @@ export const analyticsApi = adminApi.injectEndpoints({
       }),
       providesTags: ['Analytics'],
     }),
+
+    // --- Per-user analytics drill-down ---
+    getEventUsers: builder.query<EventUsersResponse, GetEventUsersParams>({
+      query: (params) => ({
+        url: '/analytics/event-users',
+        params,
+      }),
+      providesTags: ['Analytics'],
+    }),
+    getUserAnalyticsSummary: builder.query<UserAnalyticsSummaryResponse, { userId: string } & GetMetricsParams>({
+      query: ({ userId, ...params }) => ({
+        url: `/analytics/users/${userId}/summary`,
+        params,
+      }),
+      providesTags: (_result, _error, { userId }) => [
+        { type: 'Analytics', id: `user-summary-${userId}` },
+      ],
+    }),
+    getUserEvents: builder.query<UserEventsResponse, GetUserEventsParams>({
+      query: ({ userId, ...params }) => ({
+        url: `/analytics/users/${userId}/events`,
+        params,
+      }),
+      providesTags: (_result, _error, { userId }) => [
+        { type: 'Analytics', id: `user-events-${userId}` },
+      ],
+    }),
   }),
 });
 
@@ -92,4 +154,7 @@ export const {
   useExportAnalyticsMutation,
   useGetEventSummaryQuery,
   useGetItemFrequencyQuery,
+  useGetEventUsersQuery,
+  useGetUserAnalyticsSummaryQuery,
+  useGetUserEventsQuery,
 } = analyticsApi;

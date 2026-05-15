@@ -164,6 +164,90 @@ export interface ItemFrequency {
   total_saves: number;
 }
 
+// Per-user analytics drill-down (manager request: per-user event history,
+// item_ids consistency, server timestamps, calendar/event/outfit associations)
+export interface AnalyticsUserStatsRow {
+  _id: string;
+  email: string;
+  status: 'active' | 'inactive';
+  isSubscribed: boolean;
+  createdAt: string;
+  lastActiveAt: string | null;
+  totalEvents: number;
+  firstEventAt: string | null;
+  lastEventAt: string | null;
+  eventsByType: EventsByType;
+}
+
+export interface AnalyticsUserTopItem {
+  item_id: string;
+  count: number;
+  fromCloset: number;
+  title: string | null;
+  image: string | null;
+}
+
+export interface AnalyticsUserSummary {
+  userId: string;
+  totalEvents: number;
+  firstEventAt: string | null;
+  lastEventAt: string | null;
+  eventsByType: EventsByType;
+  saveRate: number;
+  topItems: AnalyticsUserTopItem[];
+  linkedOutfitCount: number;
+  linkedSavedOutfitCount: number;
+}
+
+export interface AnalyticsItemRef {
+  _id: string;
+  title: string | null;
+  image: string | null;
+}
+
+export interface AnalyticsEventItemEntry {
+  item_id: string | null;
+  is_from_closet: boolean;
+  item: AnalyticsItemRef | null;
+}
+
+export interface AnalyticsEventLinkedOutfit {
+  kind: 'recommendation' | 'savedOutfit';
+  recommendationId: string | null;
+  savedOutfitId: string | null;
+  status?: string;
+  title?: string | null;
+  source?: string | null;
+  createdAt: string;
+  event: {
+    _id?: string;
+    title: string;
+    startTime: string;
+    endTime: string;
+    source: 'calendar' | 'manual';
+  } | null;
+}
+
+export interface AnalyticsEventEntry {
+  _id: string;
+  event_type: AnalyticsEventType;
+  user_id: string;
+  outfit_id: string | null;
+  outfit: AnalyticsEventLinkedOutfit | null;
+  timestamp: string;
+  createdAt: string;
+  updatedAt: string;
+  data: {
+    item_ids: AnalyticsEventItemEntry[];
+    original_item_id: string | null;
+    original_item: AnalyticsItemRef | null;
+    new_item_id: string | null;
+    new_item: AnalyticsItemRef | null;
+    category: string | null;
+    type: 'full' | 'item' | null;
+  };
+}
+
 // Table configuration
 export interface TableColumn<T> {
   id: string;
