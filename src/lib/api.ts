@@ -56,6 +56,8 @@ export const adminApi = createApi({
     'AuditLogs',
     'Analytics',
     'CMS',
+    'Ingestion',
+    'EmailLogs',
   ],
   endpoints: () => ({}),
 });

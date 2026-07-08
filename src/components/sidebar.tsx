@@ -18,6 +18,8 @@ import {
   Award,
   Hash,
   Mail,
+  Workflow,
+  MailSearch,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { logout } from '@/features/auth/authSlice';
@@ -75,6 +77,13 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'CMS', href: '/cms', icon: FileText },
       { label: 'Email Templates', href: '/content/email-templates', icon: Mail },
+    ],
+  },
+  {
+    title: 'Monitoring',
+    items: [
+      { label: 'Ingestion Monitor', href: '/ingestion', icon: Workflow },
+      { label: 'Email Logs', href: '/email-logs', icon: MailSearch },
     ],
   },
 ];

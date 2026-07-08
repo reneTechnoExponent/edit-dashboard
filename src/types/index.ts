@@ -281,3 +281,264 @@ export interface TableFilters {
   sortOrder: 'asc' | 'desc';
   [key: string]: string | number;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Ingestion & Email monitoring
+// Backend controllers:
+//   EDIT/controllers/admin.ingestion.analytics.controller.js
+//   EDIT/controllers/admin.email.analytics.controller.js
+// All of these endpoints use the { status, message, data } envelope,
+// so ApiResponse<T> / PaginatedResponse<T> apply directly.
+// ─────────────────────────────────────────────────────────────
+
+/** Populated user reference on a log document (or the raw ObjectId string). */
+export interface LogUserRef {
+  _id: string;
+  email: string;
+  name?: string;
+}
+
+// ── Ingestion overview (GET /analytics/ingestion/overview) ──
+export interface IngestionOverview {
+  totals: {
+    gmailApiReturned: number;
+    totalEmails: number;
+    processed: number;
+    skipped: number;
+    errored: number;
+  };
+  funnel: {
+    sentToAirParser: number;
+    webhookProcessed: number;
+    airParserRawItems: number;
+    filteredItems: number;
+    itemsCreated: number;
+    itemsSkipped: number;
+  };
+  quality: {
+    usedClassifyFallback: number;
+    usedAiItemsFallback: number;
+    avgProcessingMs: number | null;
+  };
+  sync: {
+    totalSyncRuns: number;
+    avgSyncDurationMs: number | null;
+  };
+}
+
+// ── Retailer breakdown (GET /analytics/ingestion/retailers) ──
+export interface IngestionRetailer {
+  retailer: string | null;
+  emails: number;
+  processed: number;
+  skipped: number;
+  itemsCreated: number;
+  categories: Array<string | null>;
+}
+
+// ── Skip & failure reasons (GET /analytics/ingestion/skip-failure-reasons) ──
+export interface IngestionSkipReason {
+  reason: string | null;
+  count: number;
+}
+
+export interface IngestionFailureReason {
+  classifyMailError: string | null;
+  extractClothingError: string | null;
+  count: number;
+}
+
+export interface IngestionBlockedCounters {
+  blockedByKeywords: number;
+  blockedByOrderPreFilter: number;
+  blockedByNonPurchaseFilter: number;
+  blockedByClassifyMail: number;
+  alreadyProcessed: number;
+  classifyMailFailed: number;
+}
+
+export interface IngestionSkipFailure {
+  skipReasons: IngestionSkipReason[];
+  failureReasons: IngestionFailureReason[];
+  blockedCounters: IngestionBlockedCounters;
+}
+
+// ── Ingestion trends (GET /analytics/ingestion/trends) ──
+export interface IngestionDailyTrend {
+  date: string;
+  emails: number;
+  processed: number;
+  skipped: number;
+  itemsCreated: number;
+}
+
+export interface IngestionSyncHealth {
+  status: string | null;
+  runs: number;
+  avgDurationMs: number | null;
+  gmailApiEmails: number;
+}
+
+export interface IngestionTrends {
+  daily: IngestionDailyTrend[];
+  syncHealth: IngestionSyncHealth[];
+}
+
+// ── Parser mismatches (GET /analytics/ingestion/parser-mismatches) ──
+export interface ParserMismatchSummary {
+  totalSentToAirParser: number;
+  notWebhookProcessed: number;
+  countMismatch: number;
+  itemsDroppedAtCreate: number;
+}
+
+export interface ParserMismatchItem {
+  _id: string;
+  gmailMessageId: string;
+  user: string | null;
+  from: string | null;
+  subject: string | null;
+  classifyMailCategory: string | null;
+  extractedItemCount: number;
+  airParserRawItemCount: number;
+  airParserFilteredItemCount: number;
+  itemsCreatedCount: number;
+  itemsSkippedCount: number;
+  webhookProcessed: boolean;
+  aiVsParserMismatch: boolean;
+  parserVsCreatedDrop: number;
+  createdAt: string;
+}
+
+export interface ParserMismatches {
+  summary: ParserMismatchSummary;
+  items: ParserMismatchItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
+}
+
+// ── Email sync log — one document per sync run (GET /analytics/email-sync) ──
+export interface EmailSyncLog {
+  _id: string;
+  user: string | LogUserRef;
+  userEmail: string | null;
+  gmailQuery: string | null;
+  gmailQueryIncludesTabs: string[];
+  gmailQueryExcludesTabs: string[];
+  emailFetchDurationInMonths: number | null;
+  gmailApiTotalEmails: number;
+  gmailApiPagesFetched: number;
+  emailsProcessed: number;
+  emailsSkipped: number;
+  emailsFailed: number;
+  emailsBlockedByKeywords: number;
+  emailsBlockedByOrderPreFilter: number;
+  emailsBlockedByNonPurchaseFilter: number;
+  emailsBlockedByClassifyMail: number;
+  emailsAlreadyProcessed: number;
+  emailsClassifyMailFailed: number;
+  emailLimit: number | null;
+  syncStartedAt: string | null;
+  syncCompletedAt: string | null;
+  syncDurationMs: number | null;
+  status: 'running' | 'completed' | 'failed';
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Email processing log — one document per email (GET /analytics/email-processing) ──
+export interface EmailProcessingLog {
+  _id: string;
+  user: string | LogUserRef;
+  gmailMessageId: string;
+  subject: string | null;
+  from: string | null;
+  /** Excluded from list responses; only present when includeHtmlBody=true or on the detail endpoint. */
+  htmlBody?: string | null;
+  classifyMailResponse: unknown;
+  classifyMailCategory: string | null;
+  extractClothingResponse: unknown;
+  extractedItemCount: number;
+  wasSkipped: boolean;
+  skipReason: string | null;
+  sentToAirParser: boolean;
+  airParserDocId: string | null;
+  classifyMailError: string | null;
+  extractClothingError: string | null;
+  usedClassifyFallback: boolean;
+  usedAiItemsFallback: boolean;
+  processingDurationMs: number | null;
+  aiExtractedItems: unknown[];
+  airParserRawItems: unknown[];
+  airParserFilteredItems: unknown[];
+  itemsCreated: unknown[];
+  itemsSkipped: unknown[];
+  airParserRawItemCount: number;
+  airParserFilteredItemCount: number;
+  itemsCreatedCount: number;
+  itemsSkippedCount: number;
+  webhookProcessed: boolean;
+  webhookProcessedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Raw email store — retained ~30 days for debugging ──
+export interface RawEmailStore {
+  _id: string;
+  gmailMessageId: string;
+  user: string | LogUserRef;
+  htmlBody: string;
+  subject: string | null;
+  sender: string | null;
+  processedByAi: boolean;
+  aiPreFilterResponse: unknown;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ── Email sync summary (GET /analytics/email-sync/summary) ──
+export interface EmailSyncSummaryUser {
+  _id: string | null;
+  userEmail: string | null;
+  totalSyncRuns: number;
+  totalGmailApiEmails: number;
+  totalProcessed: number;
+  totalSkipped: number;
+  totalFailed: number;
+  totalBlockedByKeywords: number;
+  totalBlockedByClassifyMail: number;
+  totalAlreadyProcessed: number;
+  totalClassifyMailFailed: number;
+  lastSyncAt: string | null;
+  lastGmailQuery: string | null;
+  lastExcludedTabs: string[] | null;
+  lastIncludedTabs: string[] | null;
+}
+
+export interface EmailCategoryCount {
+  _id: string | null;
+  count: number;
+}
+
+export interface EmailSyncSummary {
+  perUser: EmailSyncSummaryUser[];
+  categoryDistribution: EmailCategoryCount[];
+  skipReasonDistribution: EmailCategoryCount[];
+  tabAnalysis: {
+    note: string;
+    excludedCategories: string[];
+    includedCategories: string[];
+  };
+}
+
+// ── Email processing detail (GET /analytics/email-processing/:gmailMessageId) ──
+export interface EmailProcessingDetail {
+  processingLog: EmailProcessingLog | null;
+  rawEmailStore: RawEmailStore | null;
+}
