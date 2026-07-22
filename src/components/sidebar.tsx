@@ -20,6 +20,7 @@ import {
   Mail,
   Workflow,
   MailSearch,
+  Send,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { logout } from '@/features/auth/authSlice';
@@ -84,6 +85,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: 'Ingestion Monitor', href: '/ingestion', icon: Workflow },
       { label: 'Email Logs', href: '/email-logs', icon: MailSearch },
+      { label: 'Send Push Notification', href: '/push-notifications', icon: Send },
     ],
   },
 ];

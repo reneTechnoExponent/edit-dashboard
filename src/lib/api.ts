@@ -58,6 +58,7 @@ export const adminApi = createApi({
     'CMS',
     'Ingestion',
     'EmailLogs',
+    'PushTokens',
   ],
   endpoints: () => ({}),
 });

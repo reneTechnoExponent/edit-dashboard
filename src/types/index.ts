@@ -542,3 +542,60 @@ export interface EmailProcessingDetail {
   processingLog: EmailProcessingLog | null;
   rawEmailStore: RawEmailStore | null;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Push notifications (FCM)
+// Backend controller: EDIT/controllers/admin.notification.controller.js
+// These endpoints use the { success, message, data } envelope.
+// ─────────────────────────────────────────────────────────────
+
+export type DevicePlatform = 'ios' | 'android' | 'web';
+
+/** A user who currently has an active FCM token registered (login-time capture). */
+export interface UserWithToken {
+  userId: string;
+  email: string;
+  name: string | null;
+  platform: DevicePlatform;
+  deviceId: string | null;
+  tokenUpdatedAt: string;
+}
+
+export interface UsersWithTokensResponse {
+  success: boolean;
+  message: string;
+  data: {
+    count: number;
+    users: UserWithToken[];
+  };
+}
+
+export interface SendPushRequest {
+  userId: string;
+  title: string;
+  body: string;
+}
+
+/** Per-device delivery outcome returned by the send endpoints. */
+export interface PushDiagnostic {
+  token: string;
+  platform?: DevicePlatform;
+  deviceId?: string | null;
+  success: boolean;
+  messageId?: string;
+  error?: { code: string; message: string };
+  hint?: string;
+}
+
+export interface SendPushResponse {
+  success: boolean;
+  message: string;
+  data: {
+    firebaseConfigured: boolean;
+    tokenCount?: number;
+    delivered?: boolean;
+    successCount?: number;
+    failureCount?: number;
+    diagnostics?: PushDiagnostic[];
+  };
+}
