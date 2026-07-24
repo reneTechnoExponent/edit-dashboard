@@ -20,6 +20,8 @@ interface EmailSyncLogParams {
 interface EmailProcessingLogParams {
   userId?: string;
   gmailMessageId?: string;
+  /** Partial, case-insensitive keyword match against the email subject. */
+  subject?: string;
   category?: string;
   skipReason?: string;
   /** 'true' to only show skipped emails. */

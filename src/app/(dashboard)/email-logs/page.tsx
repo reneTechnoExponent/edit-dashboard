@@ -81,6 +81,8 @@ export default function EmailLogsPage() {
   // Processing-view filters
   const [msgIdInput, setMsgIdInput] = useState("");
   const [gmailMessageId, setGmailMessageId] = useState("");
+  const [subjectInput, setSubjectInput] = useState("");
+  const [subject, setSubject] = useState("");
   const [categoryInput, setCategoryInput] = useState("");
   const [category, setCategory] = useState("");
   const [skipReasonInput, setSkipReasonInput] = useState("");
@@ -118,6 +120,7 @@ export default function EmailLogsPage() {
         ...dateParams,
         ...(userId && { userId }),
         ...(gmailMessageId && { gmailMessageId }),
+        ...(subject && { subject }),
         ...(category && { category }),
         ...(skipReason && { skipReason }),
         ...(skippedOnly && { skippedOnly: "true" }),
@@ -344,6 +347,33 @@ export default function EmailLogsPage() {
                     }}
                   >
                     Find
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {view === "processing" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email Subject</label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Search by subject keyword…"
+                    value={subjectInput}
+                    onChange={(e) => setSubjectInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setSubject(subjectInput.trim());
+                        setProcPage(1);
+                      }
+                    }}
+                  />
+                  <Button
+                    onClick={() => {
+                      setSubject(subjectInput.trim());
+                      setProcPage(1);
+                    }}
+                  >
+                    Search
                   </Button>
                 </div>
               </div>

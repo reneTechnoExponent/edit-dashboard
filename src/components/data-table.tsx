@@ -20,6 +20,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -187,6 +188,28 @@ export function DataTable<T extends { _id: string }>({
   const canPreviousPage = page > 1;
   const canNextPage = page < totalPages;
 
+  // "Skip to page" input — lets the user jump directly to any page.
+  const [pageInput, setPageInput] = React.useState(String(page));
+
+  // Keep the input in sync when the page changes via the arrow buttons.
+  React.useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
+
+  const commitPageInput = () => {
+    const parsed = Number.parseInt(pageInput, 10);
+    if (Number.isNaN(parsed)) {
+      setPageInput(String(page));
+      return;
+    }
+    // Clamp to the valid range so out-of-bounds input never fires a bad request.
+    const target = Math.min(Math.max(parsed, 1), Math.max(totalPages, 1));
+    if (target !== page) {
+      onPageChange(target);
+    }
+    setPageInput(String(target));
+  };
+
   // Loading skeleton
   if (isLoading) {
     return (
@@ -323,6 +346,27 @@ export function DataTable<T extends { _id: string }>({
               Page {page} of {totalPages}
             </p>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <p className="text-sm font-medium">Go to</p>
+              <Input
+                type="number"
+                min={1}
+                max={totalPages}
+                value={pageInput}
+                onChange={(e) => setPageInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    commitPageInput();
+                  }
+                }}
+                onBlur={commitPageInput}
+                aria-label="Go to page"
+                className="h-8 w-16 text-center"
+              />
+            </div>
+          )}
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
