@@ -28,6 +28,7 @@ import {
   Wand2,
   Activity,
   Search,
+  AlertCircle,
 } from "lucide-react";
 import {
   useGetUserMetricsQuery,
@@ -36,6 +37,7 @@ import {
   useExportAnalyticsMutation,
   useGetEventSummaryQuery,
   useGetEventUsersQuery,
+  useGetUncategorizedItemsQuery,
 } from "@/features/analytics/analyticsApi";
 import type { AnalyticsEventType, AnalyticsUserStatsRow } from "@/types";
 import { UserAnalyticsDialog } from "@/components/UserAnalyticsDialog";
@@ -78,6 +80,11 @@ export default function AnalyticsPage() {
   const [usersSearchInput, setUsersSearchInput] = useState("");
   const [usersSearch, setUsersSearch] = useState("");
 
+  // Uncategorized items panel state
+  const [uncategorizedType, setUncategorizedType] = useState<"category" | "subcategory">("category");
+  const [uncategorizedPage, setUncategorizedPage] = useState(1);
+  const [showUncategorizedList, setShowUncategorizedList] = useState(false);
+
   const dateParams = {
     ...(startDate && { startDate }),
     ...(endDate && { endDate }),
@@ -96,6 +103,12 @@ export default function AnalyticsPage() {
       ...(usersSearch && { search: usersSearch }),
       ...dateParams,
     });
+
+  const { data: uncategorizedData, isLoading: isLoadingUncategorized, isFetching: isFetchingUncategorized } =
+    useGetUncategorizedItemsQuery(
+      { type: uncategorizedType, page: uncategorizedPage, limit: 20 },
+      { skip: !showUncategorizedList },
+    );
 
   const [exportAnalytics, { isLoading: isExporting }] = useExportAnalyticsMutation();
 
@@ -276,7 +289,7 @@ export default function AnalyticsPage() {
           </div>
         ) : clothing ? (
           <>
-            <div className="grid gap-4 md:grid-cols-2 mb-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Items</CardTitle>
@@ -296,7 +309,191 @@ export default function AnalyticsPage() {
                   <div className="text-2xl font-bold">{clothing.averageItemsPerUser.toFixed(1)}</div>
                 </CardContent>
               </Card>
+
+              <Card
+                className="cursor-pointer transition-colors hover:bg-muted/50"
+                onClick={() => {
+                  setUncategorizedType("category");
+                  setUncategorizedPage(1);
+                  setShowUncategorizedList(true);
+                }}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Uncategorized Items</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-orange-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {clothing.uncategorizedItems}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">No menu/category assigned</p>
+                </CardContent>
+              </Card>
+
+              <Card
+                className="cursor-pointer transition-colors hover:bg-muted/50"
+                onClick={() => {
+                  setUncategorizedType("subcategory");
+                  setUncategorizedPage(1);
+                  setShowUncategorizedList(true);
+                }}
+              >
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Un-Subcategorized Items</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-yellow-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {clothing.unSubcategorizedItems}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">No subcategory assigned</p>
+                </CardContent>
+              </Card>
             </div>
+
+            {/* Uncategorized items list panel */}
+            {showUncategorizedList && (
+              <Card className="mb-4">
+                <CardHeader>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle>
+                        {uncategorizedType === "category"
+                          ? "Uncategorized Items"
+                          : "Un-Subcategorized Items"}
+                      </CardTitle>
+                      <CardDescription>
+                        {uncategorizedType === "category"
+                          ? "Items with no menu/category assigned"
+                          : "Items with no subcategory assigned"}
+                      </CardDescription>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex rounded-md border">
+                        <button
+                          className={`px-3 py-1.5 text-sm rounded-l-md transition-colors ${
+                            uncategorizedType === "category"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-background hover:bg-muted"
+                          }`}
+                          onClick={() => {
+                            setUncategorizedType("category");
+                            setUncategorizedPage(1);
+                          }}
+                        >
+                          Category
+                        </button>
+                        <button
+                          className={`px-3 py-1.5 text-sm rounded-r-md border-l transition-colors ${
+                            uncategorizedType === "subcategory"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-background hover:bg-muted"
+                          }`}
+                          onClick={() => {
+                            setUncategorizedType("subcategory");
+                            setUncategorizedPage(1);
+                          }}
+                        >
+                          Subcategory
+                        </button>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowUncategorizedList(false)}
+                      >
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingUncategorized ? (
+                    <div className="space-y-2">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-10 bg-muted animate-pulse rounded" />
+                      ))}
+                    </div>
+                  ) : !uncategorizedData || uncategorizedData.data.items.length === 0 ? (
+                    <p className="text-center text-muted-foreground py-8">
+                      No items found
+                    </p>
+                  ) : (
+                    <>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Title</TableHead>
+                              <TableHead>Brand</TableHead>
+                              <TableHead>Color</TableHead>
+                              <TableHead>Size</TableHead>
+                              <TableHead>Source</TableHead>
+                              <TableHead>User</TableHead>
+                              <TableHead>Added</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {uncategorizedData.data.items.map((item) => (
+                              <TableRow key={item._id}>
+                                <TableCell className="font-medium max-w-[200px] truncate">
+                                  {item.title}
+                                </TableCell>
+                                <TableCell>{item.brand ?? "—"}</TableCell>
+                                <TableCell>{item.color ?? "—"}</TableCell>
+                                <TableCell>{item.size ?? "—"}</TableCell>
+                                <TableCell>
+                                  <Badge variant={item.isParsedByAi ? "secondary" : "outline"}>
+                                    {item.isParsedByAi ? "AI Parsed" : "Manual"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground">
+                                  {item.user?.email ?? "—"}
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground">
+                                  {new Date(item.createdAt).toLocaleDateString()}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      {uncategorizedData.data.pagination.pages > 1 && (
+                        <div className="mt-4 flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">
+                            Page {uncategorizedData.data.pagination.page} of{" "}
+                            {uncategorizedData.data.pagination.pages} ·{" "}
+                            {uncategorizedData.data.pagination.total} items
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={uncategorizedPage <= 1 || isFetchingUncategorized}
+                              onClick={() => setUncategorizedPage((p) => Math.max(1, p - 1))}
+                            >
+                              Previous
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                uncategorizedPage >= uncategorizedData.data.pagination.pages ||
+                                isFetchingUncategorized
+                              }
+                              onClick={() => setUncategorizedPage((p) => p + 1)}
+                            >
+                              Next
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Category Distribution Chart */}
             {categoryChartData.length > 0 && (

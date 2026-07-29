@@ -128,11 +128,45 @@ export interface AnalyticsMetrics {
     totalItems: number;
     averageItemsPerUser: number;
     categoryDistribution: Array<{ _id: string; count: number }>;
+    uncategorizedItems: number;
+    unSubcategorizedItems: number;
   };
   subscriptions: {
     activeSubscriptions: number;
     newSubscriptions: number;
     conversionRate: number;
+  };
+}
+
+// Uncategorized clothing items list
+export interface UncategorizedClothingItem {
+  _id: string;
+  title: string;
+  brand: string | null;
+  color: string | null;
+  size: string | null;
+  image: string | null;
+  isParsedByAi: boolean;
+  createdAt: string;
+  user: {
+    _id: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+  } | null;
+}
+
+export interface UncategorizedItemsResponse {
+  success: boolean;
+  message: string;
+  data: {
+    items: UncategorizedClothingItem[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      pages: number;
+    };
   };
 }
 

@@ -8,6 +8,7 @@ import type {
   AnalyticsUserSummary,
   ItemFrequency,
   PaginatedResponse,
+  UncategorizedItemsResponse,
 } from '@/types';
 
 interface GetMetricsParams {
@@ -51,6 +52,12 @@ interface GetEventUsersParams extends GetMetricsParams {
   sortBy?: 'totalEvents' | 'lastEventAt' | 'firstEventAt';
   sortOrder?: 'asc' | 'desc';
   search?: string;
+}
+
+interface GetUncategorizedItemsParams {
+  type?: 'category' | 'subcategory';
+  page?: number;
+  limit?: number;
 }
 
 interface GetUserEventsParams extends GetMetricsParams {
@@ -149,6 +156,15 @@ export const analyticsApi = adminApi.injectEndpoints({
         { type: 'Analytics', id: `user-events-${userId}` },
       ],
     }),
+
+    // --- Uncategorized / un-subcategorized clothing items list ---
+    getUncategorizedItems: builder.query<UncategorizedItemsResponse, GetUncategorizedItemsParams>({
+      query: (params) => ({
+        url: '/analytics/clothing-items/uncategorized',
+        params,
+      }),
+      providesTags: ['Analytics'],
+    }),
   }),
 });
 
@@ -162,4 +178,5 @@ export const {
   useGetEventUsersQuery,
   useGetUserAnalyticsSummaryQuery,
   useGetUserEventsQuery,
+  useGetUncategorizedItemsQuery,
 } = analyticsApi;
