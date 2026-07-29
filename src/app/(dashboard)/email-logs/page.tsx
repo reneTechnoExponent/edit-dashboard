@@ -357,7 +357,7 @@ export default function EmailLogsPage() {
                 <label className="text-sm font-medium">Email Subject</label>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="Search by subject keyword…"
+                    placeholder="keyword or -exclude…"
                     value={subjectInput}
                     onChange={(e) => setSubjectInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -376,6 +376,9 @@ export default function EmailLogsPage() {
                     Search
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Prefix with <code className="font-mono bg-muted px-1 rounded">-</code> to exclude&nbsp;— e.g. <code className="font-mono bg-muted px-1 rounded">-shipment</code> hides subjects containing "shipment"
+                </p>
               </div>
             )}
 
