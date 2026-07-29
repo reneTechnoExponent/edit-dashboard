@@ -32,10 +32,11 @@ import {
 
 export interface DataTableColumn<T> {
   id: string;
-  header: string;
+  header: React.ReactNode;
   accessorKey?: keyof T;
   cell?: (row: T) => React.ReactNode;
   sortable?: boolean;
+  headerClassName?: string;
 }
 
 interface DataTableProps<T> {
@@ -277,13 +278,17 @@ export function DataTable<T extends { _id: string }>({
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  // Find the matching custom column definition to pick up headerClassName
+                  const customCol = columns.find((c) => c.id === header.column.id);
+                  return (
+                    <TableHead key={header.id} className={customCol?.headerClassName}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>

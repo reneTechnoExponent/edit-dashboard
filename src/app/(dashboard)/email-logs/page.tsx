@@ -202,9 +202,19 @@ export default function EmailLogsPage() {
       id: "email",
       header: "Email",
       cell: (row) => (
-        <div className="max-w-[280px]">
-          <p className="truncate font-medium">{row.subject || "(no subject)"}</p>
-          <p className="truncate text-xs text-muted-foreground">{row.from || "—"}</p>
+        <div className="min-w-[380px] max-w-[560px]">
+          <p
+            className="truncate font-medium"
+            title={row.subject || "(no subject)"}
+          >
+            {row.subject || "(no subject)"}
+          </p>
+          <p
+            className="truncate text-xs text-muted-foreground"
+            title={row.from || undefined}
+          >
+            {row.from || "—"}
+          </p>
         </div>
       ),
     },
@@ -238,8 +248,15 @@ export default function EmailLogsPage() {
     },
     {
       id: "items",
-      header: "Items Created",
-      cell: (row) => formatNumber(row.itemsCreatedCount),
+      header: (
+        <span className="leading-tight">
+          Items<br />Created
+        </span>
+      ),
+      headerClassName: "w-[72px] text-center",
+      cell: (row) => (
+        <div className="text-center">{formatNumber(row.itemsCreatedCount)}</div>
+      ),
     },
     {
       id: "date",
