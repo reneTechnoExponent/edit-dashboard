@@ -33,6 +33,32 @@ export function formatNumber(value: number | null | undefined): string {
   return value.toLocaleString();
 }
 
+/**
+ * Format a USD amount as currency, or a dash when absent.
+ *
+ * LLM costs are often tiny (sub-cent), so for small non-zero amounts we widen
+ * the fraction digits instead of rounding to $0.00. Exactly zero renders as
+ * "$0.00" so an empty cell is distinguishable from a real zero cost.
+ */
+export function formatCurrency(
+  value: number | null | undefined,
+  currency = 'USD'
+): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+
+  const abs = Math.abs(value);
+  let maximumFractionDigits = 2;
+  if (abs > 0 && abs < 0.01) maximumFractionDigits = 6;
+  else if (abs < 1) maximumFractionDigits = 4;
+
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits,
+  }).format(value);
+}
+
 /** Safely stringify an unknown value as pretty JSON for debug display. */
 export function toPrettyJson(value: unknown): string {
   if (value === null || value === undefined) return '';

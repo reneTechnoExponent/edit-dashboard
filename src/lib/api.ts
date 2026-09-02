@@ -59,6 +59,8 @@ export const adminApi = createApi({
     'Ingestion',
     'EmailLogs',
     'PushTokens',
+    'LlmUsage',
+    'LlmPricing',
   ],
   endpoints: () => ({}),
 });
