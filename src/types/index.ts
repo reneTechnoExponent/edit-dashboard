@@ -418,6 +418,45 @@ export interface IngestionTrends {
   syncHealth: IngestionSyncHealth[];
 }
 
+// ── Ingestion cost (GET /analytics/ingestion/cost/*) — Plan #7 ──
+export interface IngestionCostFeature {
+  feature: 'ingestion' | 'outfit' | 'comparison' | 'chat' | 'other';
+  costUsd: number;
+  totalTokens: number;
+  calls: number;
+}
+
+export interface IngestionCostOverview {
+  unitCosts: { airParserPerDoc: number; currency: string };
+  openAi: {
+    totalCostUsd: number;
+    byFeature: IngestionCostFeature[];
+  };
+  airParser: {
+    docs: number;
+    totalCostUsd: number;
+  };
+  ingestionTotalCostUsd: number;
+  grandTotalCostUsd: number;
+}
+
+export interface IngestionCostAccount {
+  userId: string;
+  email: string;
+  ingestionAiCostUsd: number;
+  otherAiCostUsd: number;
+  airParserCostUsd: number;
+  airParserDocs: number;
+  ingestionTotalCostUsd: number;
+  totalCostUsd: number;
+}
+
+export interface IngestionCostByAccount {
+  unitCosts: { airParserPerDoc: number; currency: string };
+  items: IngestionCostAccount[];
+  pagination: { total: number; page: number; limit: number; pages: number };
+}
+
 // ── Parser mismatches (GET /analytics/ingestion/parser-mismatches) ──
 export interface ParserMismatchSummary {
   totalSentToAirParser: number;
@@ -440,8 +479,33 @@ export interface ParserMismatchItem {
   itemsSkippedCount: number;
   webhookProcessed: boolean;
   aiVsParserMismatch: boolean;
+  /** Plan #6c: direction of the AI-vs-parser disagreement. */
+  mismatchDirection?: 'ai_gt_parser' | 'parser_gt_ai' | 'equal';
   parserVsCreatedDrop: number;
   createdAt: string;
+}
+
+// ── Item / email drop reasons by retailer (GET /analytics/ingestion/item-drop-reasons) — Plan #6d ──
+export interface DropReasonCount {
+  reason: string;
+  count: number;
+}
+
+export interface RetailerItemDrops {
+  retailer: string | null;
+  reasons: DropReasonCount[];
+  totalDropped: number;
+}
+
+export interface RetailerEmailDrops {
+  retailer: string | null;
+  reasons: DropReasonCount[];
+  totalEmailsRejected: number;
+}
+
+export interface IngestionItemDropReasons {
+  itemLevel: RetailerItemDrops[];
+  emailLevel: RetailerEmailDrops[];
 }
 
 export interface ParserMismatches {
@@ -492,6 +556,9 @@ export interface EmailProcessingLog {
   gmailMessageId: string;
   subject: string | null;
   from: string | null;
+  /** Parsed sender (Plan #1): reliable address + retailer domain (subdomains collapsed). */
+  senderEmail?: string | null;
+  senderDomain?: string | null;
   /** Excluded from list responses; only present when includeHtmlBody=true or on the detail endpoint. */
   htmlBody?: string | null;
   classifyMailResponse: unknown;
@@ -518,6 +585,8 @@ export interface EmailProcessingLog {
   itemsSkippedCount: number;
   webhookProcessed: boolean;
   webhookProcessedAt: string | null;
+  /** Plan #6: email-level reason the webhook produced no items. */
+  webhookRejectReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }

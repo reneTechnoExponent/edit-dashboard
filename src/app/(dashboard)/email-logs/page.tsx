@@ -65,6 +65,17 @@ function syncStatusVariant(status: EmailSyncLog["status"]): "default" | "destruc
   return "secondary";
 }
 
+/**
+ * Group a raw skip reason to its stable TYPE (Plan #6a) by dropping the
+ * variable suffix: "blocked_subject: has shipped" → "blocked_subject",
+ * "non_purchase: shipping_notification (...)" → "non_purchase". So the column
+ * shows one label per reason type instead of a unique string per email.
+ */
+function reasonType(reason: string | null | undefined): string {
+  if (!reason) return "—";
+  return reason.split(/[:(]/)[0].trim();
+}
+
 export default function EmailLogsPage() {
   const [view, setView] = useState<LogView>("sync");
 
@@ -247,15 +258,36 @@ export default function EmailLogsPage() {
       },
     },
     {
-      id: "items",
+      // Plan #6a: skip / reject reason grouped by TYPE (raw string on hover).
+      id: "reason",
+      header: "Drop Reason",
+      cell: (row) => {
+        const raw = row.wasSkipped ? row.skipReason : row.webhookRejectReason;
+        if (!raw) return <span className="text-muted-foreground">—</span>;
+        return (
+          <Badge variant="outline" title={raw}>
+            {reasonType(raw)}
+          </Badge>
+        );
+      },
+    },
+    {
+      // Plan #6b: the full funnel counts inline (AI → parser → filtered → created / skipped).
+      id: "funnel",
       header: (
         <span className="leading-tight">
-          Items<br />Created
+          AI · Raw · Filt<br />Created · Skip
         </span>
       ),
-      headerClassName: "w-[72px] text-center",
+      headerClassName: "w-[150px] text-center",
       cell: (row) => (
-        <div className="text-center">{formatNumber(row.itemsCreatedCount)}</div>
+        <div className="text-center font-mono text-xs" title="AI extracted · Parser raw · Filtered · Created · Skipped">
+          {formatNumber(row.extractedItemCount)} · {formatNumber(row.airParserRawItemCount)} ·{" "}
+          {formatNumber(row.airParserFilteredItemCount)}
+          <br />
+          <span className="text-green-600">{formatNumber(row.itemsCreatedCount)}</span> ·{" "}
+          <span className="text-amber-600">{formatNumber(row.itemsSkippedCount)}</span>
+        </div>
       ),
     },
     {

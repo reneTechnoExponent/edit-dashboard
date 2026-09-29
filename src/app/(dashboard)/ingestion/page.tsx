@@ -28,6 +28,9 @@ import {
   useGetSkipFailureReasonsQuery,
   useGetIngestionTrendsQuery,
   useGetParserMismatchesQuery,
+  useGetIngestionCostOverviewQuery,
+  useGetIngestionCostByAccountQuery,
+  useGetItemDropReasonsQuery,
 } from "@/features/ingestion/ingestionApi";
 import type { ParserMismatchItem } from "@/types";
 import { formatDuration, formatNumber } from "@/lib/format";
@@ -138,6 +141,23 @@ export default function IngestionMonitorPage() {
   const mismatchItems = mismatchData?.data?.items ?? [];
   const mismatchTotal = mismatchData?.data?.pagination?.total ?? 0;
 
+  // ── Cost (Plan #7) ──
+  const [costPage, setCostPage] = useState(1);
+  const { data: costOverviewData, isLoading: loadingCostOverview } =
+    useGetIngestionCostOverviewQuery(filterParams);
+  const { data: costByAccountData, isLoading: loadingCostByAccount } =
+    useGetIngestionCostByAccountQuery({ ...filterParams, page: costPage, limit: 25 });
+  const cost = costOverviewData?.data;
+  const costAccounts = costByAccountData?.data?.items ?? [];
+  const costAccountsTotal = costByAccountData?.data?.pagination?.total ?? 0;
+  const usd = (n: number | undefined) => `$${(n ?? 0).toFixed(2)}`;
+
+  // ── Drop reasons by retailer (Plan #6d) ──
+  const { data: dropReasonsData, isLoading: loadingDropReasons } =
+    useGetItemDropReasonsQuery({ ...filterParams, limit: 50 });
+  const itemDrops = dropReasonsData?.data?.itemLevel ?? [];
+  const emailDrops = dropReasonsData?.data?.emailLevel ?? [];
+
   const applyUserId = () => {
     setUserId(userIdInput.trim());
     setMismatchPage(1);
@@ -178,14 +198,23 @@ export default function IngestionMonitorPage() {
     {
       id: "aiVsParser",
       header: "AI → Parser",
-      cell: (row) => (
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm">
-            {row.extractedItemCount} → {row.airParserRawItemCount}
-          </span>
-          {row.aiVsParserMismatch && <Badge variant="destructive">mismatch</Badge>}
-        </div>
-      ),
+      cell: (row) => {
+        // Plan #6c: show the DIRECTION of the disagreement, not just yes/no.
+        const dirLabel =
+          row.mismatchDirection === "ai_gt_parser"
+            ? "AI > Parser"
+            : row.mismatchDirection === "parser_gt_ai"
+            ? "Parser > AI"
+            : null;
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm">
+              {row.extractedItemCount} → {row.airParserRawItemCount}
+            </span>
+            {dirLabel && <Badge variant="destructive">{dirLabel}</Badge>}
+          </div>
+        );
+      },
     },
     {
       id: "drop",
@@ -360,6 +389,149 @@ export default function IngestionMonitorPage() {
         </div>
       </div>
 
+      {/* Ingestion Cost (Plan #7) */}
+      <div>
+        <h2 className="mb-4 text-xl font-semibold">Ingestion Cost</h2>
+        <div className="grid gap-4 md:grid-cols-4">
+          <StatCard
+            label="AirParser"
+            value={usd(cost?.airParser?.totalCostUsd)}
+            icon={Inbox}
+            isLoading={loadingCostOverview}
+            hint={`${formatNumber(cost?.airParser?.docs ?? 0)} docs @ ${usd(cost?.unitCosts?.airParserPerDoc)}`}
+          />
+          <StatCard
+            label="OpenAI (ingestion)"
+            value={usd(cost?.openAi?.byFeature?.find((f) => f.feature === "ingestion")?.costUsd)}
+            icon={Mail}
+            isLoading={loadingCostOverview}
+            hint="mail classify/extract + image"
+          />
+          <StatCard
+            label="Ingestion Total"
+            value={usd(cost?.ingestionTotalCostUsd)}
+            icon={PackageCheck}
+            tone="success"
+            isLoading={loadingCostOverview}
+            hint="AirParser + ingestion AI"
+          />
+          <StatCard
+            label="All AI + AirParser"
+            value={usd(cost?.grandTotalCostUsd)}
+            icon={BarChart}
+            isLoading={loadingCostOverview}
+            hint="every feature combined"
+          />
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>OpenAI Cost by Feature</CardTitle>
+              <CardDescription>Ingestion vs outfit vs chat vs comparison</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Feature</TableHead>
+                    <TableHead className="text-right">Cost</TableHead>
+                    <TableHead className="text-right">Calls</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(cost?.openAi?.byFeature ?? []).length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
+                        No cost data
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    cost?.openAi?.byFeature?.map((f) => (
+                      <TableRow key={f.feature}>
+                        <TableCell className="capitalize">{f.feature}</TableCell>
+                        <TableCell className="text-right font-medium">{usd(f.costUsd)}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatNumber(f.calls)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Cost by Account</CardTitle>
+              <CardDescription>
+                Per-user AirParser + OpenAI ingestion cost
+                {costAccountsTotal > 0 ? ` (${formatNumber(costAccountsTotal)} accounts)` : ""}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Account</TableHead>
+                    <TableHead className="text-right">AirParser</TableHead>
+                    <TableHead className="text-right">Ingest AI</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {costAccounts.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">
+                        {loadingCostByAccount ? "Loading…" : "No cost data"}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    costAccounts.map((a) => (
+                      <TableRow key={a.userId}>
+                        <TableCell className="max-w-[180px] truncate" title={a.email}>
+                          {a.email}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {usd(a.airParserCostUsd)}
+                          <span className="ml-1 text-xs">({a.airParserDocs})</span>
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {usd(a.ingestionAiCostUsd)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{usd(a.totalCostUsd)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              {costAccountsTotal > 25 && (
+                <div className="mt-3 flex items-center justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={costPage <= 1}
+                    onClick={() => setCostPage((p) => Math.max(1, p - 1))}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">Page {costPage}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={costPage * 25 >= costAccountsTotal}
+                    onClick={() => setCostPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       {/* Funnel + trend */}
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -500,6 +672,105 @@ export default function IngestionMonitorPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Drop reasons by retailer (Plan #6d) */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Item Drops by Retailer</CardTitle>
+            <CardDescription>Why individual items didn&apos;t reach the closet, per sender</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Retailer</TableHead>
+                  <TableHead>Reasons</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {itemDrops.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
+                      {loadingDropReasons ? "Loading…" : "No item drops in range"}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  itemDrops.map((r, idx) => (
+                    <TableRow key={r.retailer ?? `unknown-${idx}`}>
+                      <TableCell className="font-medium">{r.retailer || "(unknown)"}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {r.reasons
+                            .slice()
+                            .sort((a, b) => b.count - a.count)
+                            .map((rc) => (
+                              <Badge key={rc.reason} variant="outline" className="text-xs">
+                                {rc.reason}: {formatNumber(rc.count)}
+                              </Badge>
+                            ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatNumber(r.totalDropped)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Email Rejections by Retailer</CardTitle>
+            <CardDescription>Whole emails the webhook rejected, per sender</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Retailer</TableHead>
+                  <TableHead>Reasons</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {emailDrops.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="py-6 text-center text-muted-foreground">
+                      {loadingDropReasons ? "Loading…" : "No email rejections in range"}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  emailDrops.map((r, idx) => (
+                    <TableRow key={r.retailer ?? `unknown-${idx}`}>
+                      <TableCell className="font-medium">{r.retailer || "(unknown)"}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {r.reasons
+                            .slice()
+                            .sort((a, b) => b.count - a.count)
+                            .map((rc) => (
+                              <Badge key={rc.reason} variant="outline" className="text-xs">
+                                {rc.reason}: {formatNumber(rc.count)}
+                              </Badge>
+                            ))}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatNumber(r.totalEmailsRejected)}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Skip & failure reasons */}
       <div className="grid gap-4 lg:grid-cols-2">
